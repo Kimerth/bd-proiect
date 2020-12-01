@@ -1,6 +1,8 @@
 <!-- templates/registration/login.html -->
 {% extends "base.html" %}
 
+{% load crispy_forms_tags %}
+
 {% block content %}
 
   {% if form.errors %}
@@ -18,17 +20,8 @@
   
   <form method="post" action="{% url 'login' %}">
     {% csrf_token %}
-    <table>
-      <tr>
-        <td>{{ form.username.label_tag }}</td>
-        <td>{{ form.username }}</td>
-      </tr>
-      <tr>
-        <td>{{ form.password.label_tag }}</td>
-        <td>{{ form.password }}</td>
-      </tr>
-    </table>
-    <input type="submit" value="login" />
+    {{ form|crispy }}
+    <input type="submit" value="login" class="mt-4 btn btn-success"/>
     <input type="hidden" name="next" value="{{ next }}" />
   </form>
   
