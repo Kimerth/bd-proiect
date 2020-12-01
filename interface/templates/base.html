@@ -3,12 +3,17 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>{% block title %}Django Auth{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" type="text/css" href="{% static 'style.css' %}">
+  <title>{% block title %}Proiect BD{% endblock %}</title>
 </head>
 <body>
-  <main>
+  <div class="sidenav">
+		<a href="/">home</a>
+	</div>
+  <div id="content" name="content" class="main">
     {% block content %}
     {% endblock %}
-  </main>
+  </div>
 </body>
 </html>
