@@ -1,75 +1,53 @@
 CREATE TABLE `Departments`
 (
- `DepartmentID`    int NOT NULL AUTO_INCREMENT ,
+ `DepartmentID`    int NOT NULL PRIMARY KEY NUMBER GENERATED ALWAYS AS IDENTITY ,
  `Department Name` varchar(45) NOT NULL ,
  `Website`         varchar(45) NULL ,
-
-PRIMARY KEY (`DepartmentID`)
 );
 
 CREATE TABLE `Researchers`
 (
- `UserID`        int NOT NULL AUTO_INCREMENT ,
+ `UserID`        int NOT NULL PRIMARY KEY NUMBER GENERATED ALWAYS AS IDENTITY ,
  `First Name`    varchar(45) NOT NULL ,
  `Last Name`     varchar(45) NOT NULL ,
- `DepartmentID`  int NOT NULL ,
- `Email Address` varchar(45) NOT NULL ,
- `Phone Number`  varchar(45) NOT NULL ,
- `Role`          varchar(45) NOT NULL ,
-
-PRIMARY KEY (`UserID`),
-KEY `fkIdx_1` (`DepartmentID`),
-CONSTRAINT `FK_1` FOREIGN KEY `fkIdx_1` (`DepartmentID`) REFERENCES `Departments` (`DepartmentID`)
+ `DepartmentID`  int NOT NULL FOREIGN KEY REFERENCES `Departments` (`DepartmentID`),
+ `Email Address` varchar(45) NOT NULL UNIQUE,
+ `Phone Number`  varchar(45) NOT NULL UNIQUE,
+ `Role`          varchar(45) NOT NULL CHECK (Role = 'tehnician' OR Role = 'laborant' OR Role = 'cercetator'),
 );
 
 CREATE TABLE `Tools`
 (
- `DeviceID`       int NOT NULL AUTO_INCREMENT ,
+ `DeviceID`       int NOT NULL PRIMARY KEY NUMBER GENERATED ALWAYS AS IDENTITY ,
  `Manufacturer`   varchar(45) NOT NULL ,
  `Model name`     varchar(45) NOT NULL ,
- `Serial Number`  varchar(45) NOT NULL ,
+ `Serial Number`  varchar(45) NOT NULL UNIQUE,
  `Specifications` varchar(256) NULL ,
-
-PRIMARY KEY (`DeviceID`)
 );
 
 CREATE TABLE `Experiments`
 (
- `ExperimentID` int NOT NULL AUTO_INCREMENT ,
- `UserID`       int NOT NULL ,
- `DeviceID`     int NOT NULL ,
+ `ExperimentID` int NOT NULL PRIMARY KEY NUMBER GENERATED ALWAYS AS IDENTITY ,
+ `UserID`       int NOT NULL FOREIGN KEY REFERENCES `Researchers` (`UserID`),
+ `DeviceID`     int NOT NULL  FOREIGN KEY REFERENCES `Tools` (`DeviceID`),
  `Title`        varchar(45) NOT NULL ,
  `Description`  varchar(512) NOT NULL ,
  `Theory`       varchar(512) NOT NULL ,
-
-PRIMARY KEY (`ExperimentID`),
-KEY `fkIdx_2` (`UserID`),
-CONSTRAINT `FK_2` FOREIGN KEY `fkIdx_2` (`UserID`) REFERENCES `Researchers` (`UserID`),
-KEY `fkIdx_3` (`DeviceID`),
-CONSTRAINT `FK_3` FOREIGN KEY `fkIdx_3` (`DeviceID`) REFERENCES `Tools` (`DeviceID`)
 );
 
 CREATE TABLE `Results`
 (
- `ResultID`     int NOT NULL AUTO_INCREMENT ,
- `ExperimentID` int NOT NULL ,
+ `ResultID`     int NOT NULL PRIMARY KEY NUMBER GENERATED ALWAYS AS IDENTITY ,
+ `ExperimentID` int NOT NULL FOREIGN KEY REFERENCES `Experiments` (`ExperimentID`),
  `Remarks`      varchar(512) NOT NULL ,
  `Observations` varchar(512) NOT NULL ,
  `Description`  varchar(512) NOT NULL ,
-
-PRIMARY KEY (`ResultID`),
-KEY `fkIdx_4` (`ExperimentID`),
-CONSTRAINT `FK_4` FOREIGN KEY `fkIdx_4` (`ExperimentID`) REFERENCES `Experiments` (`ExperimentID`)
 );
 
 CREATE TABLE `Papers`
 (
- `RaportID`     int NOT NULL AUTO_INCREMENT ,
- `ExperimentID` int NOT NULL ,
+ `RaportID`     int NOT NULL PRIMARY KEY NUMBER GENERATED ALWAYS AS IDENTITY ,
+ `ExperimentID` int NOT NULL FOREIGN KEY REFERENCES `Experiments` (`ExperimentID`),
  `Abstract`     varchar(2048) NOT NULL ,
  `Link to pdf`  varchar(45) NULL ,
-
-PRIMARY KEY (`RaportID`),
-KEY `fkIdx_5` (`ExperimentID`),
-CONSTRAINT `FK_5` FOREIGN KEY `fkIdx_5` (`ExperimentID`) REFERENCES `Experiments` (`ExperimentID`)
 );
