@@ -1,0 +1,8 @@
+{% extends "admin/index.html" %}
+{% load i18n admin_urls %}
+{% block content %}
+<form action='actionUrl' method='GET'>
+<button type='submit'> import users </button>
+</form>
+{{ block.super }}
+{% endblock %}

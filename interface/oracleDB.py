@@ -10,10 +10,14 @@ def connect():
                              min = 2, max = 5, increment = 1, threaded = True)
     return pool
 
-def cursor(conn):
-    csr = conn.cursor()
-    return csr
+def cursor(pool):
+    return pool.acquire().cursor()
+
+def get_users(pool):
+    csr = cursor(pool)
+
+    csr.execute('SELECT "First Name", "Last Name", "Email Address", "Role" FROM "Researchers"')
+    return csr.fetchall()
 
 pool = connect()
-conn = pool.acquire()
-print("Database version:", conn.version)
+print("Database version:", pool.acquire().version)

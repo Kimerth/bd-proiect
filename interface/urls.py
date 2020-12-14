@@ -17,8 +17,11 @@ from django.contrib import admin
 from django.urls import path, include
 from . import views
 
+admin.site.index_template = 'admin/index.html'
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('admin/actionUrl', views.import_users),
     path('', views.index, name='index'),
     path('accounts/', include('django.contrib.auth.urls')),
 ]
