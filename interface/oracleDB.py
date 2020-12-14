@@ -14,7 +14,6 @@ def cursor(conn):
     csr = conn.cursor()
     return csr
 
-if __name__ == "__main__":
-    pool = connect()
-    conn = pool.acquire()
-    print("Database version:", pool.acquire().version)
+pool = connect()
+conn = pool.acquire()
+print("Database version:", conn.version)
