@@ -13,6 +13,23 @@
 <body>
   <div class="sidenav">
 		<a href="/">home</a>
+    {% if user.is_authenticated %}
+      {% if perms.web.see_tools %}
+        <a href="/tools">tools</a>
+      {% endif %}
+      {% if perms.web.see_researchers %}
+        <a href="/researchers">researchers</a>
+      {% endif %}
+      {% if perms.web.see_experiments %}
+        <a href="/experiments">experiments</a>
+      {% endif %}
+      {% if perms.web.see_results %}
+        <a href="/results">results</a>
+      {% endif %}
+      {% if perms.web.see_basic %}
+        <a href="/about">about</a>
+      {% endif %}    
+    {% endif %}
 	</div>
   <div id="content" name="content" class="main">
     <div class="row justify-content-center">

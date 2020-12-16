@@ -16,7 +16,7 @@ def cursor(pool):
 def get_users(pool):
     csr = cursor(pool)
 
-    csr.execute('SELECT "First Name", "Last Name", "Email Address", "Role" FROM "Researchers"')
+    csr.execute('SELECT * FROM "Researchers"')
     return csr.fetchall()
 
 pool = connect()

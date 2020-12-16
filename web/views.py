@@ -1,7 +1,8 @@
 from django.shortcuts import render, redirect
-from . import oracleDB
+from interface import oracleDB
 
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import Group
+from .models import User
 
 def index(request):
     return render(request, 'index.html')
@@ -13,7 +14,7 @@ def import_users(request):
             user.delete()
 
     def users_iterator():
-        for fname, lname, mail, role in oracleDB.get_users(oracleDB.pool):
+        for _, fname, lname, _, mail, _, role in oracleDB.get_users(oracleDB.pool):
             user = User.objects.create(
                 username=mail.split('@')[0],
                 first_name=fname,

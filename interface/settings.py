@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'crispy_forms',
+    'web'
 ]
 
 MIDDLEWARE = [
@@ -125,3 +126,5 @@ STATICFILES_DIRS = [
 ]
 
 LOGIN_REDIRECT_URL = '/'
+
+AUTH_USER_MODEL = 'web.User'
