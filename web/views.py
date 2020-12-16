@@ -34,3 +34,27 @@ def import_users(request):
         pass
 
     return redirect('/admin')
+
+def display_table(request, cursor):
+    query_header = [item[0] for item in cursor.description]
+    query_result = []
+
+    for item in cursor:
+        query_result.append(item)
+
+    return render(request, 'table_display.html', {'query_header': query_header, 'query_result' : query_result})
+
+def tools(request):
+    return display_table(request, oracleDB.get_tools(oracleDB.pool))
+
+def researchers(request):
+    return display_table(request, oracleDB.get_users(oracleDB.pool))
+
+def experiments(request):
+    return display_table(request, oracleDB.get_experiments(oracleDB.pool))
+
+def results(request):
+    return display_table(request, oracleDB.get_results(oracleDB.pool))
+
+def about(request):
+    return display_table(request, oracleDB.get_departments(oracleDB.pool))

@@ -15,9 +15,33 @@ def cursor(pool):
 
 def get_users(pool):
     csr = cursor(pool)
-
     csr.execute('SELECT * FROM "Researchers"')
-    return csr.fetchall()
+    return csr
+
+def get_tools(pool):
+    csr = cursor(pool)
+    csr.execute('SELECT * FROM "Tools"')
+    return csr
+
+def get_experiments(pool):
+    csr = cursor(pool)
+    csr.execute('SELECT * FROM "Experiments"')
+    return csr
+
+def get_results(pool):
+    csr = cursor(pool)
+    csr.execute('SELECT * FROM "Results"')
+    return csr
+
+def get_departments(pool):
+    csr = cursor(pool)
+    csr.execute('SELECT * FROM "Departments"')
+    return csr
+
+def get_buildings(pool):
+    csr = cursor(pool)
+    csr.execute('SELECT * FROM "Buildings"')
+    return csr
 
 pool = connect()
 print("Database version:", pool.acquire().version)
