@@ -23,6 +23,12 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <div class="bg-modal">
+        <div class="modal-content">
+            <div class="close"> + </div>
+        </div>
+    </div>
 {% else %}
   <p>You are not logged in</p>
   <a href="{% url 'login' %}">Log In</a>
