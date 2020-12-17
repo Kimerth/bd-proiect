@@ -1,0 +1,13 @@
+<!-- templates/add_entry.html -->
+{% extends 'base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}Add entry{% endblock %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        <h2 class="mt-2"> Add new {{ item_name }} </h2>
+        {% crispy form form.helper %}
+    {% endif %}
+{% endblock %}

@@ -9,5 +9,9 @@ class User(AbstractUser):
             ("see_results", "See Results"),
             ("see_tools", "See Tools"),
             ("see_researchers", "See Researchers"),
-
+            ("add_basic", "Add new Departments and Buildings"),
+            ("add_experiments", "Add mew Experiments"),
+            ("add_results", "Add new Results"),
+            ("add_tools", "Add new Tools"),
+            ("add_researchers", "Add new Researchers"),
         ]

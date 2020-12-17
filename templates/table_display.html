@@ -4,33 +4,35 @@
 {% block title %}Data view{% endblock %}
 
 {% block content %}
-{% if user.is_authenticated %}
-    <table class="table">
-        <thead>
-            <tr>
-                {% for item in query_header%}
-                    <th scope="col"> {{ item }} </th>
-                {% endfor %}
-            </tr>
-        </thread>
-        <tbody>
-            {% for item in query_result %}
+    <h2 class="mt-2"> {{ table_name }} </h2>
+    <a class="btn btn-dark" href="{{ request.path }}/add" role="button"> Add new entry </a>
+    {% if user.is_authenticated %}
+        <table class="table">
+            <thead>
                 <tr>
-                {% for field in item %}
-                    <td> {{ field }} </td>
-                {% endfor %}
+                    {% for item in query_header%}
+                        <th scope="col"> {{ item }} </th>
+                    {% endfor %}
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thread>
+            <tbody>
+                {% for item in query_result %}
+                    <tr>
+                    {% for field in item %}
+                        <td> {{ field }} </td>
+                    {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-    <div class="bg-modal">
-        <div class="modal-content">
-            <div class="close"> + </div>
+        <div class="bg-modal">
+            <div class="modal-content">
+                <div class="close"> + </div>
+            </div>
         </div>
-    </div>
-{% else %}
-  <p>You are not logged in</p>
-  <a href="{% url 'login' %}">Log In</a>
-{% endif %}
+    {% else %}
+    <p>You are not logged in</p>
+    <a href="{% url 'login' %}">Log In</a>
+    {% endif %}
 {% endblock %}
