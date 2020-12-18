@@ -35,6 +35,120 @@ class AddToolForm(forms.Form):
 
         self.helper.add_input(Submit('submit', 'Submit'))
 
+class AddBuildingForm(forms.Form):
+    address = forms.CharField(
+        label='Address',
+        max_length=45,
+        required=True
+    )
+    city = forms.CharField(
+        label='City',
+        max_length=45,
+        required=True
+    )
+    zipcode = forms.CharField(
+        label='Zipcode',
+        max_length=45,
+        required=True
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'id-addBuildingForm'
+        self.helper.form_class = 'blueForms'
+        self.helper.form_method = 'post'
+        self.helper.form_action = 'add/building'
+
+        self.helper.add_input(Submit('submit', 'Submit'))
+
+class AddDepartmentForm(forms.Form):
+    department_name = forms.CharField(
+        label='Department Name',
+        max_length=45,
+        required=True
+    )
+    #TODO: check
+    website = forms.CharField(
+        label='Website',
+        max_length=45,
+        required=True
+    )
+
+    def __init__(self, db_pool, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'id-addDepartmentForm'
+        self.helper.form_class = 'blueForms'
+        self.helper.form_method = 'post'
+        self.helper.form_action = 'add/department'
+
+        self.helper.add_input(Submit('submit', 'Submit'))
+
+        csr = get_buildings(db_pool)
+        choices = []
+        for id, address, city, zipcode in csr:
+            choices.append((id, '%s %s %s' % (address, city, zipcode)))
+        #TODO: check building with no dept (UNIQUE constraint!)
+        self.fields['building'] = forms.TypedChoiceField(
+            label='Building',
+            choices = tuple(choices),
+            required=True,
+            widget=forms.Select(attrs={'size' : 5})
+        )
+
+class AddResearcherForm(forms.Form):
+    first_name = forms.CharField(
+        label='First Name',
+        max_length=45,
+        required=True
+    )
+    last_name = forms.CharField(
+        label='Last Name',
+        max_length=45,
+        required=True
+    )
+    email = forms.EmailField(
+        label='Email Address',
+        max_length=45,
+        required=True
+    )
+    #TODO check 
+    email = forms.CharField(
+        label='Phone number',
+        max_length=45,
+        required=True
+    )
+
+    def __init__(self, db_pool, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = 'id-addResearcherForm'
+        self.helper.form_class = 'blueForms'
+        self.helper.form_method = 'post'
+        self.helper.form_action = ''
+
+        self.helper.add_input(Submit('submit', 'Submit'))
+
+        csr = get_departments(db_pool)
+        choices = []
+        for id, name, _, _ in csr:
+            choices.append((id, name))
+
+        self.fields['department'] = forms.TypedChoiceField(
+            label='Department',
+            choices = tuple(choices),
+            required=True,
+            widget=forms.Select(attrs={'size' : 5})
+        )
+
+        self.fields['role'] = forms.TypedChoiceField(
+            label='Role',
+            choices = (('1', 'tehnician'), ('2', 'laborant'), ('3', 'cercetator')),
+            required=True,
+            widget=forms.Select(attrs={'size' : 3})
+        )
+
 class AddExperimentForm(forms.Form):
     title = forms.CharField(
         label='Title',
@@ -108,7 +222,7 @@ class AddResultForm(forms.Form):
     def __init__(self, db_pool, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        self.helper.form_id = 'id-addToolForm'
+        self.helper.form_id = 'id-addResultForm'
         self.helper.form_class = 'blueForms'
         self.helper.form_method = 'post'
         self.helper.form_action = ''

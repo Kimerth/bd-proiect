@@ -17,4 +17,6 @@ urlpatterns = [
     path('experiments/add', views.add_experiment),
     path('results/add', views.add_result),
     path('about/add', views.add_basic),
+    path('about/add/department', views.add_basic),
+    path('about/add/building', views.add_basic),
 ]

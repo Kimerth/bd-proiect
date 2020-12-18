@@ -67,29 +67,75 @@ def display_about(request):
 ### ADD ###
 
 def form_wrapper(request, form_class, item_name, parent, db_processor):
-    if request.method == 'POST':
-        form = form_class(data=request.POST)
-        if form.is_valid():
-            #TODO add data to database using db_processor
-            return redirect(parent)
-    else:
-        form = form_class()
+    if type(form_class) is tuple:
+        fc1, fc2 = form_class
+        in1, in2 = item_name
+        p1, p2 = parent
+        dbp1, dbp2 = db_processor
+        if request.method == 'POST':
+            form1 = fc1(data=request.POST)
+            if form1.is_valid():
+                dbp1(form1)
+                return redirect(p1)
+        else:
+            form1 = fc1()
 
-    return render(request, 'add_entry.html', {'form': form, 'item_name' : item_name})
+        if request.method == 'POST' and not form1.is_valid():
+            form2 = fc2(data=request.POST)
+            if form2.is_valid():
+                dbp2(form2)
+                return redirect(p2)
+        else:
+            form2 = fc2()
+
+        return render(request, 'add_entry.html', {'form': form1, 'form2': form2, 'item_name': in1, 'item2_name': in2})
+                
+    else:
+        if request.method == 'POST':
+            form = form_class(data=request.POST)
+            if form.is_valid():
+                db_processor(form)
+                return redirect(parent)
+        else:
+            form = form_class()
+
+        return render(request, 'add_entry.html', {'form': form, 'item_name' : item_name})
 
 def add_tool(request):
-    return form_wrapper(request, AddToolForm, 'Tool', '/tools', None)
+    def db_processor(form):
+        #TODO: db_processor
+        pass
+
+    return form_wrapper(request, AddToolForm, 'Tool', '/tools', db_processor)
 
 def add_researcher(request):
-    #TODO: 
-    return redirect('')
+    def db_processor(form):
+        #TODO: db_processor
+        pass
+
+    return form_wrapper(request, partial(AddResearcherForm, db_pool=oracleDB.pool), 'Researcher', '/researchers', db_processor)
 
 def add_experiment(request):
-    return form_wrapper(request, partial(AddExperimentForm, db_pool=oracleDB.pool), 'Experiment', '/experiments', None)
+    def db_processor(form):
+        #TODO: db_processor
+        pass
+
+    return form_wrapper(request, partial(AddExperimentForm, db_pool=oracleDB.pool), 'Experiment', '/experiments', db_processor)
 
 def add_result(request):
-    return form_wrapper(request, partial(AddResultForm, db_pool=oracleDB.pool), 'Result', '/results', None)
+    def db_processor(form):
+        #TODO: db_processor
+        pass
+
+    return form_wrapper(request, partial(AddResultForm, db_pool=oracleDB.pool), 'Result', '/results', db_processor)
 
 def add_basic(request):
-    #TODO:
-    return redirect('')
+    def db_processor_building(form):
+        #TODO: db_processor
+        pass
+    def db_processor_dept(form):
+        #TODO: db_processor
+        pass
+    
+    return form_wrapper(request, (AddBuildingForm, partial(AddDepartmentForm, db_pool=oracleDB.pool)), \
+                        ('Building', 'Department'), ('/about', '/about'), (db_processor_building, db_processor_dept))
