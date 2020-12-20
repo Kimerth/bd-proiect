@@ -23,6 +23,17 @@ def get_users(pool):
     """)
     return csr
 
+def add_user(pool, fname, lname, deptID, email, phone, role):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        INSERT INTO "Researchers"
+        ("First Name", "Last Name", "DepartmentID", "Email Address", "Phone Number", "Role")
+        VALUES
+        ('%s', '%s', %d, '%s', '%s', '%s')
+    """ % (fname, lname, int(deptID), email, phone, role))
+    conn.commit()
+
 def get_tools(pool):
     csr = cursor(pool)
     csr.execute("""
@@ -32,6 +43,17 @@ def get_tools(pool):
     """)
     return csr
 
+def add_tool(pool, manufacturer, mname, sn, specs):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        INSERT INTO "Tools"
+        ("Manufacturer", "Model name", "Serial Number", "Specifications")
+        VALUES
+        ('%s', '%s', '%s', '%s')
+    """ % (manufacturer, mname, sn, specs))
+    conn.commit()
+
 def get_experiments(pool):
     csr = cursor(pool)
     csr.execute("""
@@ -40,6 +62,17 @@ def get_experiments(pool):
         ORDER BY e."ExperimentID"
     """)
     return csr
+
+def add_experiment(pool, title, desc, theory):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        INSERT INTO "Experiments"
+        ("Title", "Description", "Theory")
+        VALUES
+        ('%s', '%s', '%s')
+    """ % (title, desc, theory))
+    conn.commit()
 
 def get_results(pool):
     csr = cursor(pool)
@@ -51,6 +84,17 @@ def get_results(pool):
     """)
     return csr
 
+def add_result(pool, experiment, remarks, obs, desc):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        INSERT INTO "Results"
+        ("ExperimentID", "Remarks", "Observations", "Description")
+        VALUES
+        (%d, '%s', '%s', '%s')
+    """ % (int(experiment), remarks, obs, desc))
+    conn.commit()
+
 def get_departments(pool):
     csr = cursor(pool)
     csr.execute("""
@@ -61,9 +105,39 @@ def get_departments(pool):
     """)
     return csr
 
+def add_department(pool, dname, bID, web):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        INSERT INTO "Departments"
+        ("Department Name", "BuildingID", "Website")
+        VALUES
+        ('%s', %d, '%s')
+    """ % (dname, int(bID), web))
+    conn.commit()
+
 def get_buildings(pool):
     csr = cursor(pool)
     csr.execute('SELECT * FROM "Buildings"')
+    return csr
+
+def add_building(pool, address, city, zipcode):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        INSERT INTO "Buildings"
+        ("Address", "City", "Zipcode")
+        VALUES
+        ('%s', '%s', '%s')
+    """ % (address, city, zipcode))
+    conn.commit()
+
+def get_buildings_no_dept(pool):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT "BuildingID", "Address", "City", "Zipcode" FROM "Buildings"
+        WHERE "BuildingID" NOT IN (SELECT "BuildingID" FROM "Departments")
+    """)
     return csr
 
 pool = connect()

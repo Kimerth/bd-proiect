@@ -1,7 +1,9 @@
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset, ButtonHolder, Submit
+from django.core.exceptions import ValidationError
 from interface.oracleDB import *
+import re
 
 class AddToolForm(forms.Form):
     manufacturer = forms.CharField(
@@ -68,7 +70,6 @@ class AddDepartmentForm(forms.Form):
         max_length=45,
         required=True
     )
-    #TODO: check
     website = forms.CharField(
         label='Website',
         max_length=45,
@@ -81,15 +82,14 @@ class AddDepartmentForm(forms.Form):
         self.helper.form_id = 'id-addDepartmentForm'
         self.helper.form_class = 'blueForms'
         self.helper.form_method = 'post'
-        self.helper.form_action = 'add/department'
+        self.helper.form_action = ''
 
         self.helper.add_input(Submit('submit', 'Submit'))
 
-        csr = get_buildings(db_pool)
         choices = []
-        for id, address, city, zipcode in csr:
-            choices.append((id, '%s %s %s' % (address, city, zipcode)))
-        #TODO: check building with no dept (UNIQUE constraint!)
+        with get_buildings_no_dept(db_pool) as csr:
+            for id, address, city, zipcode in csr:
+                choices.append((id, '%s %s %s' % (address, city, zipcode)))
         self.fields['building'] = forms.TypedChoiceField(
             label='Building',
             choices = tuple(choices),
@@ -97,6 +97,15 @@ class AddDepartmentForm(forms.Form):
             widget=forms.Select(attrs={'size' : 5})
         )
 
+    def clean_website(self):
+        data = self.cleaned_data['website']
+        res = re.search(r"(https?:\/\/)|(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}", data)
+
+        if not res:
+            raise ValidationError('Not a valid website')
+
+        return data
+        
 class AddResearcherForm(forms.Form):
     first_name = forms.CharField(
         label='First Name',
@@ -114,7 +123,7 @@ class AddResearcherForm(forms.Form):
         required=True
     )
     #TODO check 
-    email = forms.CharField(
+    phone = forms.CharField(
         label='Phone number',
         max_length=45,
         required=True
@@ -130,10 +139,10 @@ class AddResearcherForm(forms.Form):
 
         self.helper.add_input(Submit('submit', 'Submit'))
 
-        csr = get_departments(db_pool)
         choices = []
-        for id, name, _, _ in csr:
-            choices.append((id, name))
+        with get_departments(db_pool) as csr:
+            for id, name, _, _ in csr:
+                choices.append((id, name))
 
         self.fields['department'] = forms.TypedChoiceField(
             label='Department',
@@ -144,7 +153,7 @@ class AddResearcherForm(forms.Form):
 
         self.fields['role'] = forms.TypedChoiceField(
             label='Role',
-            choices = (('1', 'tehnician'), ('2', 'laborant'), ('3', 'cercetator')),
+            choices = (('tehnician', 'tehnician'), ('laborant', 'laborant'), ('cercetator', 'cercetator')),
             required=True,
             widget=forms.Select(attrs={'size' : 3})
         )
@@ -176,10 +185,10 @@ class AddExperimentForm(forms.Form):
 
         self.helper.add_input(Submit('submit', 'Submit'))
 
-        csr = get_users(db_pool)
         choices = []
-        for id, fname, lname, dept, _, _, role in csr:
-            choices.append((id, "%s %s %s at %s" % (fname, lname, role, dept)))
+        with get_users(db_pool) as csr:
+            for id, fname, lname, dept, _, _, role in csr:
+                choices.append((id, "%s %s %s at %s" % (fname, lname, role, dept)))
 
         self.fields['researchers'] = forms.TypedMultipleChoiceField(
             label='Researchers',
@@ -188,10 +197,10 @@ class AddExperimentForm(forms.Form):
             widget=forms.SelectMultiple(attrs={'size' : 20})
         )
 
-        csr = get_tools(db_pool)
         choices= []
-        for id, manufacturer, mname, _, _ in csr:
-            choices.append((id, "%s %s" % (manufacturer, mname)))
+        with get_tools(db_pool) as csr:
+            for id, manufacturer, mname, _, _ in csr:
+                choices.append((id, "%s %s" % (manufacturer, mname)))
 
         self.fields['tools'] = forms.TypedMultipleChoiceField(
             label='Tools',
@@ -227,10 +236,10 @@ class AddResultForm(forms.Form):
         self.helper.form_method = 'post'
         self.helper.form_action = ''
 
-        csr = get_experiments(db_pool)
         choices = []
-        for id, title, _, _ in csr:
-            choices.append((id, title))
+        with get_experiments(db_pool) as csr:
+            for id, title, _, _ in csr:
+                choices.append((id, title))
 
         self.fields['experiment'] = forms.TypedChoiceField(
             label='Experiment',

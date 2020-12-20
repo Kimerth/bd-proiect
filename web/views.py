@@ -7,29 +7,30 @@ from .forms import *
 
 from functools import partial
 
+def create_user(fname, lname, mail, role):
+    user = User.objects.create(
+        username=mail.split('@')[0],
+        first_name=fname,
+        last_name=lname,
+        email=mail
+    )
+    user.set_password(fname + lname)
+    group = Group.objects.get(name=role) 
+    group.user_set.add(user)
+    user.save()
+    group.save()
+
 def index(request):
     return render(request, 'index.html')
 
 def import_users(request):
-
     for user in User.objects.all():
         if user.groups.all()[0].name != 'admin':
             user.delete()
 
     def users_iterator():
         for _, fname, lname, _, mail, _, role in oracleDB.get_users(oracleDB.pool):
-            user = User.objects.create(
-                username=mail.split('@')[0],
-                first_name=fname,
-                last_name=lname,
-                email=mail
-            )
-            user.set_password(fname + lname)
-            group = Group.objects.get(name=role) 
-            group.user_set.add(user)
-            user.save()
-            group.save()
-            yield user
+            yield create_user(fname, lname, mail, role)
 
     try:
         User.objects.bulk_create(iter(users_iterator()))
@@ -44,6 +45,8 @@ def display_table(request, cursor, table_name):
 
     for item in cursor:
         query_result.append(item)
+
+    cursor.close()
 
     return render(request, 'table_display.html', {'query_header': query_header, 'query_result' : query_result, 'table_name' : table_name})
 
@@ -103,39 +106,64 @@ def form_wrapper(request, form_class, item_name, parent, db_processor):
 
 def add_tool(request):
     def db_processor(form):
-        #TODO: db_processor
-        pass
+        manufacturer = form.cleaned_data['manufacturer']
+        mname = form.cleaned_data['model_name']
+        sn = form.cleaned_data['serial_number']
+        specs = form.cleaned_data['specifications']
+
+        oracleDB.add_tool(oracleDB.pool, manufacturer, mname, sn, specs)
 
     return form_wrapper(request, AddToolForm, 'Tool', '/tools', db_processor)
 
 def add_researcher(request):
     def db_processor(form):
-        #TODO: db_processor
-        pass
+        fname = form.cleaned_data['first_name']
+        lname = form.cleaned_data['last_name']
+        mail = form.cleaned_data['email']
+        phone = form.cleaned_data['phone']
+        dept = form.cleaned_data['department']
+        role = form.cleaned_data['role']
+
+        oracleDB.add_user(oracleDB.pool, fname, lname, dept, mail, phone, role)
+        create_user(fname, lname, mail, role)
 
     return form_wrapper(request, partial(AddResearcherForm, db_pool=oracleDB.pool), 'Researcher', '/researchers', db_processor)
 
 def add_experiment(request):
     def db_processor(form):
-        #TODO: db_processor
-        pass
+        title = form.cleaned_data['title']
+        desc = form.cleaned_data['description']
+        theory = form.cleaned_data['theory']
+
+        oracleDB.add_experiment(pool, title, desc, theory)
 
     return form_wrapper(request, partial(AddExperimentForm, db_pool=oracleDB.pool), 'Experiment', '/experiments', db_processor)
 
 def add_result(request):
     def db_processor(form):
-        #TODO: db_processor
-        pass
+        experiment = form.cleaned_data['experiment']
+        remarks = form.cleaned_data['remarks']
+        obs = form.cleaned_data['observations']
+        desc = form.cleaned_data['description']
+
+        oracleDB.add_result(oracleDB.pool, experiment, remarks, obs, desc)
 
     return form_wrapper(request, partial(AddResultForm, db_pool=oracleDB.pool), 'Result', '/results', db_processor)
 
 def add_basic(request):
     def db_processor_building(form):
-        #TODO: db_processor
-        pass
+        address = form.cleaned_data['address']
+        city = form.cleaned_data['city']
+        zipcode = form.cleaned_data['zipcode']
+        
+        oracleDB.add_building(oracleDB.pool, address, city, zipcode)
+
     def db_processor_dept(form):
-        #TODO: db_processor
-        pass
+        dname = form.cleaned_data['department_name']
+        bID = form.cleaned_data['building']
+        web = form.cleaned_data['website']
+
+        oracleDB.add_department(oracleDB.pool, dname, bID, web)
     
     return form_wrapper(request, (AddBuildingForm, partial(AddDepartmentForm, db_pool=oracleDB.pool)), \
                         ('Building', 'Department'), ('/about', '/about'), (db_processor_building, db_processor_dept))
