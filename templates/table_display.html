@@ -18,9 +18,18 @@
             <tbody>
                 {% for item in query_result %}
                     <tr>
-                    {% for field in item %}
-                        <td> {{ field }} </td>
-                    {% endfor %}
+                        {% for field in item %}
+                            <td> {{ field }} </td>
+                        {% endfor %}
+                        <td>
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="number" value="{{ item.id }}" name ="remove" hidden>
+                                <button type="submit" name="remove" value="{{ item.0 }}">
+                                    <span class="glyphicon glyphicon-remove" style="color:red"></span>
+                                </button>
+                            </form>
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>

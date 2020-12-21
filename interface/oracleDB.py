@@ -26,12 +26,30 @@ def get_users(pool):
 def add_user(pool, fname, lname, deptID, email, phone, role):
     conn = pool.acquire()
     csr = conn.cursor()
+    newest_id_wrapper = csr.var(cx_Oracle.NUMBER)
+    sql_params = { "id_wrapper" : newest_id_wrapper }
     csr.execute("""
         INSERT INTO "Researchers"
         ("First Name", "Last Name", "DepartmentID", "Email Address", "Phone Number", "Role")
         VALUES
         ('%s', '%s', %d, '%s', '%s', '%s')
-    """ % (fname, lname, int(deptID), email, phone, role))
+        RETURNING "UserID" into :id_wrapper
+    """ % (fname, lname, int(deptID), email, phone, role), sql_params)
+    conn.commit()
+
+    return int(newest_id_wrapper.getvalue()[0])
+
+def remove_user_by_id(pool, id):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        DELETE FROM "ExperimentsResearchersRelation"
+        WHERE "UserID" = %d
+    """ % int(id))
+    csr.execute("""
+        DELETE FROM "Researchers"
+        WHERE "UserID" = %d
+    """ % int(id))
     conn.commit()
 
 def get_tools(pool):
@@ -54,6 +72,19 @@ def add_tool(pool, manufacturer, mname, sn, specs):
     """ % (manufacturer, mname, sn, specs))
     conn.commit()
 
+def remove_tool_by_id(pool, id):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        DELETE FROM "ExperimentsToolsRelation"
+        WHERE "ToolID" = %d
+    """ % int(id))
+    csr.execute("""
+        DELETE FROM "Tools"
+        WHERE "ToolID" = %d
+    """ % int(id))
+    conn.commit()
+
 def get_experiments(pool):
     csr = cursor(pool)
     csr.execute("""
@@ -72,6 +103,27 @@ def add_experiment(pool, title, desc, theory):
         VALUES
         ('%s', '%s', '%s')
     """ % (title, desc, theory))
+    conn.commit()
+
+def remove_experiment_by_id(pool, id):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        DELETE FROM "ExperimentsResearchersRelation"
+        WHERE "ExperimentID" = %d
+    """ % int(id))
+    csr.execute("""
+        DELETE FROM "ExperimentsToolsRelation"
+        WHERE "ExperimentID" = %d
+    """ % int(id))
+    csr.execute("""
+        DELETE FROM "Results"
+        WHERE "ExperimentID" = %d
+    """ % int(id))
+    csr.execute("""
+        DELETE FROM "Experiments"
+        WHERE "ExperimentID" = %d
+    """ % int(id))
     conn.commit()
 
 def get_results(pool):
@@ -95,6 +147,15 @@ def add_result(pool, experiment, remarks, obs, desc):
     """ % (int(experiment), remarks, obs, desc))
     conn.commit()
 
+def remove_result_by_id(pool, id):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        DELETE FROM "Results"
+        WHERE "ResultID" = %d
+    """ % int(id))
+    conn.commit()
+
 def get_departments(pool):
     csr = cursor(pool)
     csr.execute("""
@@ -114,6 +175,15 @@ def add_department(pool, dname, bID, web):
         VALUES
         ('%s', %d, '%s')
     """ % (dname, int(bID), web))
+    conn.commit()
+
+def remove_department_by_id(pool, id):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        DELETE FROM "Departments"
+        WHERE "DepartmentID" = %d
+    """ % int(id))
     conn.commit()
 
 def get_buildings(pool):
@@ -139,6 +209,19 @@ def get_buildings_no_dept(pool):
         WHERE "BuildingID" NOT IN (SELECT "BuildingID" FROM "Departments")
     """)
     return csr
+
+def remove_building_by_id(pool, id):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        DELETE FROM "Departments"
+        WHERE "BuildingID" = %d
+    """ % int(id))
+    csr.execute("""
+        DELETE FROM "Buildings"
+        WHERE "BuildingID" = %d
+    """ % int(id))
+    conn.commit()
 
 pool = connect()
 print("Database version:", pool.acquire().version)

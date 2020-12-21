@@ -7,12 +7,13 @@ from .forms import *
 
 from functools import partial
 
-def create_user(fname, lname, mail, role):
+def create_user(id, fname, lname, mail, role):
     user = User.objects.create(
         username=mail.split('@')[0],
         first_name=fname,
         last_name=lname,
-        email=mail
+        email=mail,
+        uid = id
     )
     user.set_password(fname + lname)
     group = Group.objects.get(name=role) 
@@ -29,8 +30,8 @@ def import_users(request):
             user.delete()
 
     def users_iterator():
-        for _, fname, lname, _, mail, _, role in oracleDB.get_users(oracleDB.pool):
-            yield create_user(fname, lname, mail, role)
+        for id, fname, lname, _, mail, _, role in oracleDB.get_users(oracleDB.pool):
+            yield create_user(id, fname, lname, mail, role)
 
     try:
         User.objects.bulk_create(iter(users_iterator()))
@@ -53,15 +54,30 @@ def display_table(request, cursor, table_name):
 ### DISPLAY ###
 
 def display_tools(request):
+    if request.method == 'POST':
+        if 'remove' in request.POST:
+            oracleDB.remove_tool_by_id(oracleDB.pool, request.POST['remove'])
     return display_table(request, oracleDB.get_tools(oracleDB.pool), 'Tools')
 
 def display_researchers(request):
+    if request.method == 'POST':
+        if 'remove' in request.POST:
+            oracleDB.remove_user_by_id(oracleDB.pool, request.POST['remove'])
+            u = User.objects.get(uid = request.POST['remove'])
+            u.delete()
+
     return display_table(request, oracleDB.get_users(oracleDB.pool), 'Researchers')
 
 def display_experiments(request):
+    if request.method == 'POST':
+        if 'remove' in request.POST:
+            oracleDB.remove_experiment_by_id(oracleDB.pool, request.POST['remove'])
     return display_table(request, oracleDB.get_experiments(oracleDB.pool), 'Experiments')
 
 def display_results(request):
+    if request.method == 'POST':
+        if 'remove' in request.POST:
+            oracleDB.remove_result_by_id(oracleDB.pool, request.POST['remove'])
     return display_table(request, oracleDB.get_results(oracleDB.pool), 'Results')
 
 def display_about(request):
@@ -124,8 +140,8 @@ def add_researcher(request):
         dept = form.cleaned_data['department']
         role = form.cleaned_data['role']
 
-        oracleDB.add_user(oracleDB.pool, fname, lname, dept, mail, phone, role)
-        create_user(fname, lname, mail, role)
+        id = oracleDB.add_user(oracleDB.pool, fname, lname, dept, mail, phone, role)
+        create_user(id, fname, lname, mail, role)
 
     return form_wrapper(request, partial(AddResearcherForm, db_pool=oracleDB.pool), 'Researcher', '/researchers', db_processor)
 

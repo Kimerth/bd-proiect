@@ -1,7 +1,10 @@
+from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 
 class User(AbstractUser):
+    uid = models.IntegerField(default=0, unique=True)
+
     class Meta:
         permissions = [
             ("see_basic", "See Departments and Buildings"),
