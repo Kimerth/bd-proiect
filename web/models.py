@@ -17,4 +17,9 @@ class User(AbstractUser):
             ("add_results", "Add new Results"),
             ("add_tools", "Add new Tools"),
             ("add_researchers", "Add new Researchers"),
+            ("modify_basic", "Modify new Departments and Buildings"),
+            ("modify_experiments", "Modify mew Experiments"),
+            ("modify_results", "Modify new Results"),
+            ("modify_tools", "Modify new Tools"),
+            ("modify_researchers", "Modify new Researchers"),
         ]

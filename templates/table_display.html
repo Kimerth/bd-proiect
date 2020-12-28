@@ -22,9 +22,14 @@
                             <td> {{ field }} </td>
                         {% endfor %}
                         <td>
+                            <form action='{{ request.path }}/modify' method="post">
+                                {% csrf_token %}
+                                <button action='add' type="submit" name="edit" value="{{ item.0 }}">
+                                    <span class="glyphicon glyphicon-edit"></span>
+                                </button>
+                            </form>
                             <form method="post">
                                 {% csrf_token %}
-                                <input type="number" value="{{ item.id }}" name ="remove" hidden>
                                 <button type="submit" name="remove" value="{{ item.0 }}">
                                     <span class="glyphicon glyphicon-remove" style="color:red"></span>
                                 </button>

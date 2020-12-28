@@ -23,6 +23,15 @@ def get_users(pool):
     """)
     return csr
 
+def get_user_by_id(pool, id):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT "UserID", "First Name", "Last Name", "DepartmentID", "Email Address", "Phone Number", "Role" 
+        FROM "Researchers"
+        WHERE "UserID" = %d
+    """ % int(id))
+    return csr
+
 def add_user(pool, fname, lname, deptID, email, phone, role):
     conn = pool.acquire()
     csr = conn.cursor()
@@ -61,6 +70,15 @@ def get_tools(pool):
     """)
     return csr
 
+def get_tool_by_id(pool, id):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT "ToolID", "Manufacturer", "Model name", "Serial Number", COALESCE("Specifications", '') "Specifications"
+        FROM "Tools"
+        WHERE "ToolID" = %d
+    """ % int(id))
+    return csr
+
 def add_tool(pool, manufacturer, mname, sn, specs):
     conn = pool.acquire()
     csr = conn.cursor()
@@ -70,6 +88,16 @@ def add_tool(pool, manufacturer, mname, sn, specs):
         VALUES
         ('%s', '%s', '%s', '%s')
     """ % (manufacturer, mname, sn, specs))
+    conn.commit()
+
+def modify_tool(pool, id, manufacturer, mname, sn, specs):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        UPDATE "Tools"
+        SET "Manufacturer" = '%s', "Model name" = '%s', "Serial Number" = '%s', "Specifications" = '%s'
+        WHERE "ToolID" = %d
+    """ % (manufacturer, mname, sn, specs, int(id)))
     conn.commit()
 
 def remove_tool_by_id(pool, id):
@@ -94,15 +122,63 @@ def get_experiments(pool):
     """)
     return csr
 
-def add_experiment(pool, title, desc, theory):
+def get_experiment_by_id(pool, id):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT "ExperimentID", "Title", "Description", "Theory"
+        FROM "Experiments"
+        WHERE "ExperimentID" = %d
+    """ % int(id))
+    return csr
+
+def get_users_from_experiment(pool, id):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT "UserID"
+        FROM "ExperimentsResearchersRelation"
+        WHERE "ExperimentID" = %d
+    """ % int(id))
+    return csr
+
+def get_tools_from_experiment(pool, id):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT "ToolID"
+        FROM "ExperimentsToolsRelation"
+        WHERE "ExperimentID" = %d
+    """ % int(id))
+    return csr
+
+def add_experiment(pool, title, desc, theory, researchers, tools):
     conn = pool.acquire()
     csr = conn.cursor()
+    newest_id_wrapper = csr.var(cx_Oracle.NUMBER)
+    sql_params = { "id_wrapper" : newest_id_wrapper }
     csr.execute("""
         INSERT INTO "Experiments"
         ("Title", "Description", "Theory")
         VALUES
         ('%s', '%s', '%s')
-    """ % (title, desc, theory))
+        RETURNING "ExperimentID" into :id_wrapper
+    """ % (title, desc, theory), sql_params)
+    id = newest_id_wrapper.getvalue()[0]
+
+    for userID in researchers:
+        csr.execute("""
+            INSERT INTO "ExperimentsResearchersRelation"
+            ("ExperimentID", "UserID")
+            VALUES
+            ('%d', %d)
+        """ % (int(id), int(userID)))
+
+    for toolID in tools:
+        csr.execute("""
+            INSERT INTO "ExperimentsToolsRelation"
+            ("ExperimentID", "ToolID")
+            VALUES
+            ('%d', %d)
+        """ % (int(id), int(toolID)))
+
     conn.commit()
 
 def remove_experiment_by_id(pool, id):
