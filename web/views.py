@@ -67,31 +67,7 @@ def display_experiments(request):
     if request.method == 'POST':
         if 'remove' in request.POST:
             oracleDB.remove_experiment_by_id(oracleDB.pool, request.POST['remove'])
-
-    query_result = []
-    with oracleDB.get_experiments(oracleDB.pool) as csr:
-        query_header = [item[0] for item in csr.description]
-        query_header.extend(['Researchers', 'Tools'])
-        for id, title, description, theory in csr:
-            with oracleDB.get_users_from_experiment(oracleDB.pool, id) as csr2:
-                researchers = []
-                for userID in csr2:
-                    with oracleDB.get_user_by_id(oracleDB.pool, *userID) as csr3:
-                        for _, fname, lname, _, _, _, _ in csr3:
-                            researchers.append("%s %s" % (fname, lname))
-            researchers = ', '.join(researchers)
-
-            with oracleDB.get_tools_from_experiment(oracleDB.pool, id) as csr2:
-                tools = []
-                for toolID in csr2:
-                    with oracleDB.get_tool_by_id(oracleDB.pool, *toolID) as csr3:
-                        for _, manufacturer, mname, _, _ in csr3:
-                            tools.append("%s %s" % (manufacturer, mname))
-            tools = ', '.join(tools)
-
-            query_result.append((id, title, description, theory, researchers, tools))
-    
-    return render(request, 'table_display.html', {'query_header': query_header, 'query_result' : query_result, 'table_name' : 'Experiments'})
+    return display_table(request, oracleDB.get_experiments_full(oracleDB.pool), 'Experiments')
 
 def display_results(request):
     if request.method == 'POST':

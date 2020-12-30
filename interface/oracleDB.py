@@ -122,6 +122,21 @@ def get_experiments(pool):
     """)
     return csr
 
+def get_experiments_full(pool):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT e."ExperimentID" as "ID", e."Title", e."Description", e."Theory",
+            (SELECT LISTAGG(r."First Name" || ' ' || r."Last Name", ', ') WITHIN GROUP (ORDER BY r."UserID")
+            FROM "Researchers" r, "ExperimentsResearchersRelation" er
+            WHERE r."UserID" = er."UserID" AND er."ExperimentID" = e."ExperimentID") AS "Researchers",
+            (SELECT LISTAGG(t."Manufacturer" || ' ' || t."Model name", ', ') WITHIN GROUP (ORDER BY t."ToolID")
+            FROM "Tools" t, "ExperimentsToolsRelation" et
+            WHERE t."ToolID" = et."ToolID" AND et."ExperimentID" = e."ExperimentID") AS "Tools"
+        FROM "Experiments" e
+        ORDER BY e."ExperimentID"
+    """)
+    return csr
+
 def get_experiment_by_id(pool, id):
     csr = cursor(pool)
     csr.execute("""
