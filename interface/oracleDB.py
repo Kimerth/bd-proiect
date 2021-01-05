@@ -48,6 +48,16 @@ def add_user(pool, fname, lname, deptID, email, phone, role):
 
     return int(newest_id_wrapper.getvalue()[0])
 
+def modify_user(pool, id, fname, lname, deptID, email, phone, rol):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        UPDATE "Researchers"
+        SET "First Name" = '%s', "Last Name" = '%s', "DepartmentID" = '%d', "Email Address" = '%s', "Phone Number" = '%s', "Role" = '%s'
+        WHERE "UserID" = %d
+    """ % (fname, lname, int(deptID), email, phone, rol, int(id)))
+    conn.commit()
+
 def remove_user_by_id(pool, id):
     conn = pool.acquire()
     csr = conn.cursor()
@@ -227,6 +237,15 @@ def get_results(pool):
     """)
     return csr
 
+def get_result_by_id(pool, id):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT "ResultID", "ExperimentID", "Remarks", "Observations", "Description"
+        FROM "Results"
+        WHERE "ResultID" = %d
+    """ % int(id))
+    return csr
+
 def add_result(pool, experiment, remarks, obs, desc):
     conn = pool.acquire()
     csr = conn.cursor()
@@ -314,5 +333,6 @@ def remove_building_by_id(pool, id):
     """ % int(id))
     conn.commit()
 
+print("Connecting to database...")
 pool = connect()
 print("Database version:", pool.acquire().version)

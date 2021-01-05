@@ -5,6 +5,8 @@ from django.core.exceptions import ValidationError
 from interface.oracleDB import *
 import re
 
+#TODO check unique
+
 class AddToolForm(forms.Form):
     manufacturer = forms.CharField(
         label='Manufacturer',
@@ -37,6 +39,15 @@ class AddToolForm(forms.Form):
 
         self.helper.add_input(Submit('submit', 'Submit'))
 
+    def clean_manufacturer(self):
+        return self.cleaned_data['manufacturer'].strip()
+
+    def clean_model_name(self):
+        return self.cleaned_data['model_name'].strip()
+
+    def clean_serial_number(self):
+        return self.cleaned_data['serial_number'].strip()
+
 class AddBuildingForm(forms.Form):
     address = forms.CharField(
         label='Address',
@@ -63,6 +74,15 @@ class AddBuildingForm(forms.Form):
         self.helper.form_action = 'add/building'
 
         self.helper.add_input(Submit('submit', 'Submit'))
+
+    def clean_address(self):
+        return self.cleaned_data['address'].strip()
+
+    def clean_city(self):
+        return self.cleaned_data['city'].strip()
+
+    def clean_zipcode(self):
+        return self.cleaned_data['zipcode'].strip()
 
 class AddDepartmentForm(forms.Form):
     department_name = forms.CharField(
@@ -97,8 +117,11 @@ class AddDepartmentForm(forms.Form):
             widget=forms.Select(attrs={'size' : 5})
         )
 
+    def clean_department_name(self):
+        return self.cleaned_data['department_name'].strip()
+
     def clean_website(self):
-        data = self.cleaned_data['website']
+        data = self.cleaned_data['website'].strip()
         res = re.search(r"(https?:\/\/)|(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}", data)
 
         if not res:
@@ -122,7 +145,6 @@ class AddResearcherForm(forms.Form):
         max_length=45,
         required=True
     )
-    #TODO check 
     phone = forms.CharField(
         label='Phone number',
         max_length=45,
@@ -157,6 +179,33 @@ class AddResearcherForm(forms.Form):
             required=True,
             widget=forms.Select(attrs={'size' : 3})
         )
+
+    def clean_first_name(self):
+        data = self.cleaned_data['first_name'].strip()
+        if not data.isalpha():
+            raise ValidationError('Invalid character detected')
+
+        return data
+
+    def clean_last_name(self):
+        data = self.cleaned_data['last_name'].strip()
+        if not data.isalpha():
+            raise ValidationError('Invalid character detected')
+
+        return data
+
+    def clean_email(self):
+        return self.cleaned_data['email'].strip()
+
+    def clean_phone(self):
+        data = self.cleaned_data['phone'].strip()
+        res = re.search(r"((\+4)*[0-9]{10})|((\+4)*0(\([0-9]{3}\))[0-9]{6})", data)
+
+        if not res:
+            raise ValidationError('Not a valid phone number')
+
+        return data
+    
 
 class AddExperimentForm(forms.Form):
     title = forms.CharField(

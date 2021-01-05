@@ -25,13 +25,13 @@
                             <form action='{{ request.path }}/modify' method="post">
                                 {% csrf_token %}
                                 <button action='add' type="submit" name="edit" value="{{ item.0 }}">
-                                    <span class="glyphicon glyphicon-edit"></span>
+                                    <span class="glyphicon material-icons">edit</span>
                                 </button>
                             </form>
                             <form method="post">
                                 {% csrf_token %}
                                 <button type="submit" name="remove" value="{{ item.0 }}">
-                                    <span class="glyphicon glyphicon-remove" style="color:red"></span>
+                                    <span class="glyphicon material-icons" style="color:red">remove_circle</span>
                                 </button>
                             </form>
                         </td>

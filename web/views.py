@@ -2,14 +2,25 @@ from django.shortcuts import render, redirect
 from interface import oracleDB
 
 from django.contrib.auth.models import Group
+from django.contrib.auth.decorators import permission_required
 from .models import User
 from .forms import *
 
 from functools import partial
 
 def create_user(id, fname, lname, mail, role):
+    username = mail.split('@')[0]
+    trail = ''
+    while User.objects.filter(username=username + trail).exists():
+        if trail.isnumeric():
+            trail = int(trail) + 1
+        else:
+            trail = '2'
+    
+    username += trail
+
     user = User.objects.create(
-        username=mail.split('@')[0],
+        username=username,
         first_name=fname,
         last_name=lname,
         email=mail,
@@ -21,8 +32,19 @@ def create_user(id, fname, lname, mail, role):
     user.save()
     group.save()
 
+def modify_user(id, fname, lname, mail, role):
+    user = User.objects.get(uid = id)
+    group = Group.objects.get(name=user.groups.all()[0])
+    group.user_set.remove(user)
+    group.save()
+
+    user.delete()
+    create_user(id, fname, lname, mail, role)
+
 def index(request):
     return render(request, 'index.html')
+
+#TODO: delete perms
 
 def import_users(request):
     for user in User.objects.all():
@@ -48,12 +70,14 @@ def display_table(request, cursor, table_name):
 
 ### DISPLAY ###
 
+@permission_required('web.see_tools', login_url='/accounts/login/')
 def display_tools(request):
     if request.method == 'POST':
         if 'remove' in request.POST:
             oracleDB.remove_tool_by_id(oracleDB.pool, request.POST['remove'])
     return display_table(request, oracleDB.get_tools(oracleDB.pool), 'Tools')
 
+@permission_required('web.see_researchers', login_url='/accounts/login/')
 def display_researchers(request):
     if request.method == 'POST':
         if 'remove' in request.POST:
@@ -63,18 +87,21 @@ def display_researchers(request):
 
     return display_table(request, oracleDB.get_users(oracleDB.pool), 'Researchers')
 
+@permission_required('web.see_experiments', login_url='/accounts/login/')
 def display_experiments(request):
     if request.method == 'POST':
         if 'remove' in request.POST:
             oracleDB.remove_experiment_by_id(oracleDB.pool, request.POST['remove'])
     return display_table(request, oracleDB.get_experiments_full(oracleDB.pool), 'Experiments')
 
+@permission_required('web.see_results', login_url='/accounts/login/')
 def display_results(request):
     if request.method == 'POST':
         if 'remove' in request.POST:
             oracleDB.remove_result_by_id(oracleDB.pool, request.POST['remove'])
     return display_table(request, oracleDB.get_results(oracleDB.pool), 'Results')
 
+@permission_required('web.see_basic', login_url='/accounts/login/')
 def display_about(request):
     return display_table(request, oracleDB.get_departments(oracleDB.pool), 'About')
 
@@ -129,7 +156,7 @@ def db_processor_tool(form, id = 0):
     else:
         oracleDB.modify_tool(oracleDB.pool, id, manufacturer, mname, sn, specs)
 
-def db_processor_researcher(form):
+def db_processor_researcher(form, id = 0):
     fname = form.cleaned_data['first_name']
     lname = form.cleaned_data['last_name']
     mail = form.cleaned_data['email']
@@ -137,53 +164,61 @@ def db_processor_researcher(form):
     dept = form.cleaned_data['department']
     role = form.cleaned_data['role']
 
-    id = oracleDB.add_user(oracleDB.pool, fname, lname, dept, mail, phone, role)
+    if id == 0:
+        id = oracleDB.add_user(oracleDB.pool, fname, lname, dept, mail, phone, role)
+        create_user(id, fname, lname, mail, role)
+    else:
+        oracleDB.modify_user(oracleDB.pool, id, fname, lname, dept, mail, phone, role)
+        modify_user(id, fname, lname, mail, role)
 
-    create_user(id, fname, lname, mail, role)
-
-def db_processor_experiment(form):
+def db_processor_experiment(form, id = 0):
     title = form.cleaned_data['title']
     desc = form.cleaned_data['description']
     theory = form.cleaned_data['theory']
     researchers = form.cleaned_data['researchers']
     tools = form.cleaned_data['tools']
-
+    #TODO
     oracleDB.add_experiment(pool, title, desc, theory, researchers, tools)
 
-def db_processor_result(form):
+def db_processor_result(form, id = 0):
     experiment = form.cleaned_data['experiment']
     remarks = form.cleaned_data['remarks']
     obs = form.cleaned_data['observations']
     desc = form.cleaned_data['description']
-
+    #TODO
     oracleDB.add_result(oracleDB.pool, experiment, remarks, obs, desc)
 
-def db_processor_building(form):
+def db_processor_building(form, id = 0):
     address = form.cleaned_data['address']
     city = form.cleaned_data['city']
     zipcode = form.cleaned_data['zipcode']
-    
+    #TODO
     oracleDB.add_building(oracleDB.pool, address, city, zipcode)
 
 def db_processor_dept(form):
     dname = form.cleaned_data['department_name']
     bID = form.cleaned_data['building']
     web = form.cleaned_data['website']
-
+    #TODO
     oracleDB.add_department(oracleDB.pool, dname, bID, web)
 
+@permission_required('web.add_tools', login_url='/accounts/login/')
 def add_tool(request):
     return form_wrapper(request, AddToolForm, 'Tool', '/tools', db_processor_tool)
 
+@permission_required('web.add_researchers', login_url='/accounts/login/')
 def add_researcher(request):
     return form_wrapper(request, partial(AddResearcherForm, db_pool=oracleDB.pool), 'Researcher', '/researchers', db_processor_researcher)
 
+@permission_required('web.add_experiments', login_url='/accounts/login/')
 def add_experiment(request):
     return form_wrapper(request, partial(AddExperimentForm, db_pool=oracleDB.pool), 'Experiment', '/experiments', db_processor_experiment)
 
+@permission_required('web.add_results', login_url='/accounts/login/')
 def add_result(request):
     return form_wrapper(request, partial(AddResultForm, db_pool=oracleDB.pool), 'Result', '/results', db_processor_result)
 
+@permission_required('web.add_basic', login_url='/accounts/login/')
 def add_basic(request):
     return form_wrapper(request, (AddBuildingForm, partial(AddDepartmentForm, db_pool=oracleDB.pool)), \
                         ('Building', 'Department'), ('/about', '/about'), (db_processor_building, db_processor_dept))
@@ -200,6 +235,7 @@ def get_id(request):
 
     return id
 
+@permission_required('web.modify_tools', login_url='/accounts/login/')
 def modify_tool(request):
     id = get_id(request)
 
@@ -210,6 +246,7 @@ def modify_tool(request):
 
     return form_wrapper(request, AddToolForm, 'Tool', '/tools', partial(db_processor_tool, id=id), populate_form)
 
+@permission_required('web.modify_researchers', login_url='/accounts/login/')
 def modify_researcher(request):
     id = get_id(request)
 
@@ -222,6 +259,7 @@ def modify_researcher(request):
     return form_wrapper(request, partial(AddResearcherForm, db_pool=oracleDB.pool), 'Researcher', '/researchers', \
         partial(db_processor_researcher, id=id), populate_form)
 
+@permission_required('web.modify_experiments', login_url='/accounts/login/')
 def modify_experiment(request):
     id = get_id(request)
 
@@ -246,12 +284,22 @@ def modify_experiment(request):
     return form_wrapper(request, partial(AddExperimentForm, db_pool=oracleDB.pool), 'Experiment', '/experiments', \
         partial(db_processor_experiment, id=id), populate_form)
 
+@permission_required('web.modify_results', login_url='/accounts/login/')
 def modify_result(request):
     id = get_id(request)
 
-    return form_wrapper(request, partial(AddResultForm, db_pool=oracleDB.pool), 'Result', '/results', db_processor_result)
+    def populate_form(form):
+        with oracleDB.get_result_by_id(oracleDB.pool, id) as csr:
+            _, form.initial['experiment'], form.initial['remarks'], form.initial['observations'], form.initial['description'] = csr.fetchone()
 
+        return form
+
+    return form_wrapper(request, partial(AddResultForm, db_pool=oracleDB.pool), 'Result', '/results', \
+            partial(db_processor_result, id=id), populate_form)
+
+@permission_required('web.modify_basic', login_url='/accounts/login/')
 def modify_basic(request):
+    #TODO
     id = get_id(request)
 
     return form_wrapper(request, (AddBuildingForm, partial(AddDepartmentForm, db_pool=oracleDB.pool)), \
