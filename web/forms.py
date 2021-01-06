@@ -5,8 +5,6 @@ from django.core.exceptions import ValidationError
 from interface.oracleDB import *
 import re
 
-#TODO check unique
-
 class AddToolForm(forms.Form):
     manufacturer = forms.CharField(
         label='Manufacturer',
@@ -29,13 +27,15 @@ class AddToolForm(forms.Form):
         required=False
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, db_pool, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'id-addToolForm'
         self.helper.form_class = 'blueForms'
         self.helper.form_method = 'post'
         self.helper.form_action = ''
+
+        self.db_pool = db_pool
 
         self.helper.add_input(Submit('submit', 'Submit'))
 
@@ -46,7 +46,11 @@ class AddToolForm(forms.Form):
         return self.cleaned_data['model_name'].strip()
 
     def clean_serial_number(self):
-        return self.cleaned_data['serial_number'].strip()
+        data = self.cleaned_data['serial_number'].strip()
+        if serial_number_in_use(self.db_pool, data):
+            raise ValidationError('Serial number already exists')
+
+        return data
 
 class AddBuildingForm(forms.Form):
     address = forms.CharField(
@@ -96,7 +100,7 @@ class AddDepartmentForm(forms.Form):
         required=True
     )
 
-    def __init__(self, db_pool, *args, **kwargs):
+    def __init__(self, db_pool, deptid = -1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'id-addDepartmentForm'
@@ -107,7 +111,7 @@ class AddDepartmentForm(forms.Form):
         self.helper.add_input(Submit('submit', 'Submit'))
 
         choices = []
-        with get_buildings_no_dept(db_pool) as csr:
+        with get_buildings_no_dept(db_pool, deptid) as csr:
             for id, address, city, zipcode in csr:
                 choices.append((id, '%s %s %s' % (address, city, zipcode)))
         self.fields['building'] = forms.TypedChoiceField(
@@ -161,6 +165,8 @@ class AddResearcherForm(forms.Form):
 
         self.helper.add_input(Submit('submit', 'Submit'))
 
+        self.db_pool = db_pool
+
         choices = []
         with get_departments(db_pool) as csr:
             for id, name, _, _ in csr:
@@ -195,7 +201,12 @@ class AddResearcherForm(forms.Form):
         return data
 
     def clean_email(self):
-        return self.cleaned_data['email'].strip()
+        data = self.cleaned_data['email'].strip()
+
+        if email_in_use(self.db_pool, data):
+            raise ValidationError('Email already in use')
+
+        return data
 
     def clean_phone(self):
         data = self.cleaned_data['phone'].strip()
@@ -203,6 +214,9 @@ class AddResearcherForm(forms.Form):
 
         if not res:
             raise ValidationError('Not a valid phone number')
+
+        if phone_in_use(self.db_pool, data):
+            raise ValidationError('Phone number already in use')
 
         return data
     

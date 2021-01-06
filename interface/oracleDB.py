@@ -23,6 +23,30 @@ def get_users(pool):
     """)
     return csr
 
+def email_in_use(pool, mail):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT "UserID"
+        FROM "Researchers"
+        WHERE "Email Address" = '%s'
+    """ % mail)
+    csr.fetchall()
+    res = csr.rowcount
+    csr.close()
+    return res != 0
+
+def phone_in_use(pool, phone):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT "UserID"
+        FROM "Researchers"
+        WHERE "Phone Number" = '%s'
+    """ % phone)
+    csr.fetchall()
+    res = csr.rowcount
+    csr.close()
+    return res != 0
+
 def get_user_by_id(pool, id):
     csr = cursor(pool)
     csr.execute("""
@@ -79,6 +103,18 @@ def get_tools(pool):
         ORDER BY t."ToolID"
     """)
     return csr
+
+def serial_number_in_use(pool, sn):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT "ToolID"
+        FROM "Tools"
+        WHERE "Serial Number" = '%s'
+    """ % sn)
+    csr.fetchall()
+    res = csr.rowcount
+    csr.close()
+    return res != 0
 
 def get_tool_by_id(pool, id):
     csr = cursor(pool)
@@ -174,6 +210,24 @@ def get_tools_from_experiment(pool, id):
     """ % int(id))
     return csr
 
+def _add_researchers_to_experiment(csr, id, researchers):
+    for userID in researchers:
+        csr.execute("""
+            INSERT INTO "ExperimentsResearchersRelation"
+            ("ExperimentID", "UserID")
+            VALUES
+            ('%d', %d)
+        """ % (int(id), int(userID)))
+
+def _add_tools_to_experiment(csr, id, tools):
+    for toolID in tools:
+        csr.execute("""
+            INSERT INTO "ExperimentsToolsRelation"
+            ("ExperimentID", "ToolID")
+            VALUES
+            ('%d', %d)
+        """ % (int(id), int(toolID)))
+        
 def add_experiment(pool, title, desc, theory, researchers, tools):
     conn = pool.acquire()
     csr = conn.cursor()
@@ -188,21 +242,33 @@ def add_experiment(pool, title, desc, theory, researchers, tools):
     """ % (title, desc, theory), sql_params)
     id = newest_id_wrapper.getvalue()[0]
 
-    for userID in researchers:
-        csr.execute("""
-            INSERT INTO "ExperimentsResearchersRelation"
-            ("ExperimentID", "UserID")
-            VALUES
-            ('%d', %d)
-        """ % (int(id), int(userID)))
+    _add_researchers_to_experiment(csr, id, researchers)
+    _add_tools_to_experiment(csr, id, tools)
 
-    for toolID in tools:
-        csr.execute("""
-            INSERT INTO "ExperimentsToolsRelation"
-            ("ExperimentID", "ToolID")
-            VALUES
-            ('%d', %d)
-        """ % (int(id), int(toolID)))
+    conn.commit()
+
+def modify_experiment(pool, id, title, desc, theory, researchers, tools):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        UPDATE "Experiments"
+        SET "Title" = '%s', "Description" = '%s', "Theory" = '%s'
+        WHERE "ExperimentID" = %d
+    """ % (title, desc, theory, int(id)))
+
+    csr.execute("""
+        DELETE FROM "ExperimentsResearchersRelation"
+        WHERE "ExperimentID" = %d
+    """ % int(id))
+
+    _add_researchers_to_experiment(csr, id, researchers)
+
+    csr.execute("""
+        DELETE FROM "ExperimentsToolsRelation"
+        WHERE "ExperimentID" = %d
+    """ % int(id))
+
+    _add_tools_to_experiment(csr, id, tools)
 
     conn.commit()
 
@@ -257,6 +323,16 @@ def add_result(pool, experiment, remarks, obs, desc):
     """ % (int(experiment), remarks, obs, desc))
     conn.commit()
 
+def modify_result(pool, id, experiment, remarks, obs, desc):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        UPDATE "Results"
+        SET "ExperimentID" = %d, "Remarks" = '%s', "Observations" = '%s', "Description" = '%s'
+        WHERE "ResultID" = %d
+    """ % (int(experiment), remarks, obs, desc, int(id)))
+    conn.commit()
+
 def remove_result_by_id(pool, id):
     conn = pool.acquire()
     csr = conn.cursor()
@@ -276,6 +352,15 @@ def get_departments(pool):
     """)
     return csr
 
+def get_department_by_id(pool, id):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT *
+        FROM "Departments"
+        WHERE "DepartmentID" = %d
+    """ % int(id))
+    return csr
+
 def add_department(pool, dname, bID, web):
     conn = pool.acquire()
     csr = conn.cursor()
@@ -285,6 +370,16 @@ def add_department(pool, dname, bID, web):
         VALUES
         ('%s', %d, '%s')
     """ % (dname, int(bID), web))
+    conn.commit()
+
+def modify_department(pool, id, dname, bID, web):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        UPDATE "Departments"
+        SET "Department Name" = '%s', "BuildingID" = %d, "Website" = '%s'
+        WHERE "DepartmentID" = %d
+    """ % (dname, int(bID), web, int(id)))
     conn.commit()
 
 def remove_department_by_id(pool, id):
@@ -301,6 +396,15 @@ def get_buildings(pool):
     csr.execute('SELECT * FROM "Buildings"')
     return csr
 
+def get_building_by_id(pool, id):
+    csr = cursor(pool)
+    csr.execute("""
+        SELECT *
+        FROM "Buildings"
+        WHERE "BuildingID" = %d
+    """ % int(id))
+    return csr
+
 def add_building(pool, address, city, zipcode):
     conn = pool.acquire()
     csr = conn.cursor()
@@ -312,12 +416,38 @@ def add_building(pool, address, city, zipcode):
     """ % (address, city, zipcode))
     conn.commit()
 
-def get_buildings_no_dept(pool):
-    csr = cursor(pool)
+def modify_building(pool, id, address, city, zipcode):
+    conn = pool.acquire()
+    csr = conn.cursor()
     csr.execute("""
-        SELECT "BuildingID", "Address", "City", "Zipcode" FROM "Buildings"
-        WHERE "BuildingID" NOT IN (SELECT "BuildingID" FROM "Departments")
-    """)
+        UPDATE "Buildings"
+        SET "Address" = '%s', "City" = '%s', "Zipcode" = '%s'
+        WHERE "BuildingID" = %d
+    """ % (address,city, zipcode, int(id)))
+    conn.commit()
+
+
+def get_buildings_no_dept(pool, id = -1):
+    csr = cursor(pool)
+    if id == -1:
+        csr.execute("""
+            SELECT "BuildingID", "Address", "City", "Zipcode" 
+            FROM "Buildings"
+            WHERE "BuildingID" NOT IN (
+                SELECT "BuildingID" 
+                FROM "Departments"
+                )
+        """)
+    else:
+        csr.execute("""
+            SELECT "BuildingID", "Address", "City", "Zipcode" 
+            FROM "Buildings"
+            WHERE "BuildingID" NOT IN (
+                SELECT "BuildingID" 
+                FROM "Departments"
+                WHERE "DepartmentID" != %d
+                )
+        """ % int(id))
     return csr
 
 def remove_building_by_id(pool, id):
@@ -331,6 +461,25 @@ def remove_building_by_id(pool, id):
         DELETE FROM "Buildings"
         WHERE "BuildingID" = %d
     """ % int(id))
+    conn.commit()
+
+def remove_building_and_dept_by_id(pool, id):
+    conn = pool.acquire()
+    csr = conn.cursor()
+    csr.execute("""
+        SELECT "BuildingID"
+        FROM "Departments"
+        WHERE "DepartmentID" = %d
+    """ % int(id))
+    bid = csr.fetchone()
+    csr.execute("""
+        DELETE FROM "Departments"
+        WHERE "DepartmentID" = %d
+    """ % int(id))
+    csr.execute("""
+        DELETE FROM "Buildings"
+        WHERE "BuildingID" = %d
+    """ % int(bid))
     conn.commit()
 
 print("Connecting to database...")

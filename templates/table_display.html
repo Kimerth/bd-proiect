@@ -22,18 +22,22 @@
                             <td> {{ field }} </td>
                         {% endfor %}
                         <td>
-                            <form action='{{ request.path }}/modify' method="post">
-                                {% csrf_token %}
-                                <button action='add' type="submit" name="edit" value="{{ item.0 }}">
-                                    <span class="glyphicon material-icons">edit</span>
-                                </button>
-                            </form>
-                            <form method="post">
-                                {% csrf_token %}
-                                <button type="submit" name="remove" value="{{ item.0 }}">
-                                    <span class="glyphicon material-icons" style="color:red">remove_circle</span>
-                                </button>
-                            </form>
+                            {% if can_modify %}
+                                <form action='{{ request.path }}/modify' method="post">
+                                    {% csrf_token %}
+                                    <button action='add' type="submit" name="edit" value="{{ item.0 }}">
+                                        <span class="glyphicon material-icons">edit</span>
+                                    </button>
+                                </form>
+                            {% endif %}
+                            {% if can_delete %}
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" name="remove" value="{{ item.0 }}">
+                                        <span class="glyphicon material-icons" style="color:red">remove_circle</span>
+                                    </button>
+                                </form>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}
