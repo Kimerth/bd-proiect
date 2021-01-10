@@ -27,7 +27,7 @@ class AddToolForm(forms.Form):
         required=False
     )
 
-    def __init__(self, db_pool, *args, **kwargs):
+    def __init__(self, db_pool, id=0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'id-addToolForm'
@@ -36,6 +36,7 @@ class AddToolForm(forms.Form):
         self.helper.form_action = ''
 
         self.db_pool = db_pool
+        self.id = id
 
         self.helper.add_input(Submit('submit', 'Submit'))
 
@@ -47,7 +48,7 @@ class AddToolForm(forms.Form):
 
     def clean_serial_number(self):
         data = self.cleaned_data['serial_number'].strip()
-        if serial_number_in_use(self.db_pool, data):
+        if serial_number_in_use(self.db_pool, self.id, data):
             raise ValidationError('Serial number already exists')
 
         return data
@@ -69,13 +70,13 @@ class AddBuildingForm(forms.Form):
         required=True
     )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, action = 'add', *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'id-addBuildingForm'
         self.helper.form_class = 'blueForms'
         self.helper.form_method = 'post'
-        self.helper.form_action = 'add/building'
+        self.helper.form_action = action + '/building'
 
         self.helper.add_input(Submit('submit', 'Submit'))
 
@@ -97,7 +98,7 @@ class AddDepartmentForm(forms.Form):
     website = forms.CharField(
         label='Website',
         max_length=45,
-        required=True
+        required=False
     )
 
     def __init__(self, db_pool, deptid = -1, *args, **kwargs):
@@ -126,6 +127,9 @@ class AddDepartmentForm(forms.Form):
 
     def clean_website(self):
         data = self.cleaned_data['website'].strip()
+        if not data:
+            return data
+
         res = re.search(r"(https?:\/\/)|(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}", data)
 
         if not res:
@@ -155,7 +159,7 @@ class AddResearcherForm(forms.Form):
         required=True
     )
 
-    def __init__(self, db_pool, *args, **kwargs):
+    def __init__(self, db_pool, id = 0, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_id = 'id-addResearcherForm'
@@ -166,6 +170,7 @@ class AddResearcherForm(forms.Form):
         self.helper.add_input(Submit('submit', 'Submit'))
 
         self.db_pool = db_pool
+        self.id = id
 
         choices = []
         with get_departments(db_pool) as csr:
@@ -188,14 +193,14 @@ class AddResearcherForm(forms.Form):
 
     def clean_first_name(self):
         data = self.cleaned_data['first_name'].strip()
-        if not data.isalpha():
+        if not data.replace(' ', '').isalpha():
             raise ValidationError('Invalid character detected')
 
         return data
 
     def clean_last_name(self):
         data = self.cleaned_data['last_name'].strip()
-        if not data.isalpha():
+        if not data.replace(' ', '').isalpha():
             raise ValidationError('Invalid character detected')
 
         return data
@@ -203,7 +208,7 @@ class AddResearcherForm(forms.Form):
     def clean_email(self):
         data = self.cleaned_data['email'].strip()
 
-        if email_in_use(self.db_pool, data):
+        if email_in_use(self.db_pool, self.id, data):
             raise ValidationError('Email already in use')
 
         return data
@@ -215,7 +220,7 @@ class AddResearcherForm(forms.Form):
         if not res:
             raise ValidationError('Not a valid phone number')
 
-        if phone_in_use(self.db_pool, data):
+        if phone_in_use(self.db_pool, self.id, data):
             raise ValidationError('Phone number already in use')
 
         return data

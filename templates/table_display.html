@@ -5,7 +5,9 @@
 
 {% block content %}
     <h2 class="mt-2"> {{ table_name }} </h2>
-    <a class="btn btn-dark" href="{{ request.path }}/add" role="button"> Add new entry </a>
+    {% if can_add %}
+        <a class="btn btn-dark" href="{{ request.path }}/add" role="button"> Add new entry </a>
+    {% endif %}
     {% if user.is_authenticated %}
         <table class="table">
             <thead>

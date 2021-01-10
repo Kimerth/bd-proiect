@@ -23,25 +23,25 @@ def get_users(pool):
     """)
     return csr
 
-def email_in_use(pool, mail):
+def email_in_use(pool, id, mail):
     csr = cursor(pool)
     csr.execute("""
         SELECT "UserID"
         FROM "Researchers"
-        WHERE "Email Address" = '%s'
-    """ % mail)
+        WHERE "Email Address" = '%s' AND "UserID" != %d
+    """ % (mail, int(id)))
     csr.fetchall()
     res = csr.rowcount
     csr.close()
     return res != 0
 
-def phone_in_use(pool, phone):
+def phone_in_use(pool, id, phone):
     csr = cursor(pool)
     csr.execute("""
         SELECT "UserID"
         FROM "Researchers"
-        WHERE "Phone Number" = '%s'
-    """ % phone)
+        WHERE "Phone Number" = '%s' AND "UserID" != %d
+    """ % (phone, int(id)))
     csr.fetchall()
     res = csr.rowcount
     csr.close()
@@ -104,13 +104,13 @@ def get_tools(pool):
     """)
     return csr
 
-def serial_number_in_use(pool, sn):
+def serial_number_in_use(pool, id, sn):
     csr = cursor(pool)
     csr.execute("""
         SELECT "ToolID"
         FROM "Tools"
-        WHERE "Serial Number" = '%s'
-    """ % sn)
+        WHERE "Serial Number" = '%s' AND "ToolID" != %d
+    """ % (sn, int(id)))
     csr.fetchall()
     res = csr.rowcount
     csr.close()
@@ -389,6 +389,13 @@ def remove_department_by_id(pool, id):
         DELETE FROM "Departments"
         WHERE "DepartmentID" = %d
     """ % int(id))
+    csr.execute("""
+        DELETE FROM "Buildings"
+        WHERE "BuildingID" NOT IN (
+            SELECT "BuildingID" 
+            FROM "Departments"
+            )
+    """)
     conn.commit()
 
 def get_buildings(pool):
